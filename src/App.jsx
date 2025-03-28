@@ -1,9 +1,10 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { PDFDownloadLink, Page, Text, View, Document, StyleSheet } from "@react-pdf/renderer";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const costItems = [
   { id: "umidita", label: "Umidità di risalita", type: "area", min: 7, max: 12 },
@@ -23,42 +24,6 @@ const costItems = [
   { id: "bagni", label: "Bagni completi da rifare", type: "bagni", min: 1200, max: 2000 },
 ];
 
-const styles = StyleSheet.create({
-  page: { padding: 30, fontSize: 12, fontFamily: 'Helvetica' },
-  section: { marginBottom: 10 },
-  title: { fontSize: 18, marginBottom: 10 },
-  text: { marginBottom: 4 },
-  bold: { fontWeight: 'bold' }
-});
-
-const PDFDocument = ({ propertyName, agencyName, area, amiantoArea, numBagni, today, costDetails, totalMin, totalMax }) => (
-  <Document>
-    <Page size="A4" style={styles.page}>
-      <View style={styles.section}>
-        <Text style={styles.title}>Stima dei Costi di Ristrutturazione</Text>
-        <Text style={styles.text}>Data: {today}</Text>
-        <Text style={styles.text}>Immobile: {propertyName || "(non specificato)"}</Text>
-        <Text style={styles.text}>Agenzia: {agencyName || "(non specificata)"}</Text>
-        <Text style={styles.text}>Metratura immobile: {area || 0} mq</Text>
-        <Text style={styles.text}>Tetto in amianto: {amiantoArea || 0} mq</Text>
-        <Text style={styles.text}>Numero di bagni: {numBagni}</Text>
-      </View>
-      <View style={styles.section}>
-        <Text style={styles.bold}>Dettaglio costi stimati:</Text>
-        {costDetails.map((item, index) => (
-          <Text key={index} style={styles.text}>
-            • {item.label}: {item.min.toLocaleString()} € – {item.max.toLocaleString()} €
-          </Text>
-        ))}
-      </View>
-      <View style={styles.section}>
-        <Text style={styles.bold}>Totale stimato:</Text>
-        <Text style={styles.text}>{totalMin.toLocaleString()} € – {totalMax.toLocaleString()} €</Text>
-      </View>
-    </Page>
-  </Document>
-);
-
 export default function CostEstimator() {
   const [selectedItems, setSelectedItems] = useState([]);
   const [area, setArea] = useState("");
@@ -73,21 +38,26 @@ export default function CostEstimator() {
     );
   };
 
+  const toNumber = (value) => {
+    const n = parseFloat(value);
+    return isNaN(n) ? 0 : n;
+  };
+
   const computeCostDetails = () => {
-    let details = [];
     const visibleItems = costItems.filter(
-      (item) => selectedItems.includes(item.id) || (item.id === "amianto" && parseFloat(amiantoArea) > 0)
+      (item) =>
+        selectedItems.includes(item.id) ||
+        (item.id === "amianto" && toNumber(amiantoArea) > 0)
     );
 
-    visibleItems.forEach((item) => {
-      let min = 0;
-      let max = 0;
+    return visibleItems.map((item) => {
+      let min = 0, max = 0;
       if (item.type === "area") {
-        min = item.min * parseFloat(area || 0);
-        max = item.max * parseFloat(area || 0);
+        min = item.min * toNumber(area);
+        max = item.max * toNumber(area);
       } else if (item.type === "amianto") {
-        min = item.min * parseFloat(amiantoArea || 0);
-        max = item.max * parseFloat(amiantoArea || 0);
+        min = item.min * toNumber(amiantoArea);
+        max = item.max * toNumber(amiantoArea);
       } else if (item.type === "bagni") {
         min = item.min * numBagni;
         max = item.max * numBagni;
@@ -95,20 +65,108 @@ export default function CostEstimator() {
         min = item.min;
         max = item.max;
       }
-      details.push({ label: item.label, min, max });
+      return { label: item.label, min, max };
     });
-
-    return details;
   };
 
   const costDetails = computeCostDetails();
   const totalMin = costDetails.reduce((sum, item) => sum + item.min, 0);
   const totalMax = costDetails.reduce((sum, item) => sum + item.max, 0);
-  const today = new Date().toLocaleDateString();
+
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const marginLeft = 40;
+    let y = 40;
+
+    doc.setFont("helvetica", "");
+    doc.setFontSize(18);
+    doc.text("Stima dei Costi di Ristrutturazione", marginLeft, y);
+
+    y += 30;
+    doc.setDrawColor(180);
+    doc.line(marginLeft, y, 555, y);
+    y += 15;
+
+    doc.setFontSize(12);
+    const today = new Date().toLocaleDateString("it-IT");
+    doc.text(`Data: ${today}`, marginLeft, y);
+    y += 20;
+    doc.text(`Immobile: ${propertyName || "(non specificato)"}`, marginLeft, y);
+    y += 20;
+    doc.text(`Agenzia: ${agencyName || "(non specificata)"}`, marginLeft, y);
+    y += 20;
+    doc.text(`Metratura: ${area || 0} mq`, marginLeft, y);
+    y += 20;
+    doc.text(`Amianto: ${amiantoArea || 0} mq`, marginLeft, y);
+    y += 20;
+    doc.text(`Bagni: ${numBagni}`, marginLeft, y);
+    y += 10;
+
+    doc.line(marginLeft, y, 555, y);
+    y += 20;
+
+    autoTable(doc, {
+      startY: y,
+      head: [["Intervento", "Costo Min", "Costo Max"]],
+      body: costDetails.map(item => [
+        item.label,
+        `${Math.round(item.min)} €`,
+        `${Math.round(item.max)} €`
+      ]),
+      margin: { left: marginLeft, right: marginLeft },
+      tableWidth: "auto",
+      styles: {
+        fontSize: 10,
+        font: "helvetica",
+        cellPadding: { top: 4, bottom: 4, left: 4, right: 4 },
+        overflow: "linebreak",
+      },
+      headStyles: {
+        fillColor: [41, 128, 185],
+        halign: "center",
+        fontStyle: "bold",
+        textColor: 255,
+      },
+      bodyStyles: {
+        textColor: 50,
+        lineWidth: 0.1,
+        lineColor: 200,
+      },
+      columnStyles: {
+        0: { cellWidth: "auto" },
+        1: { halign: "right", cellWidth: 80 },
+        2: { halign: "right", cellWidth: 80 },
+      },
+      didDrawPage: (data) => {
+        doc.setDrawColor(220);
+        doc.line(marginLeft, data.cursor.y + 10, 555, data.cursor.y + 10);
+      },
+    });
+
+    const afterTableY = doc.lastAutoTable.finalY + 25;
+    const boxWidth = 515 - marginLeft;
+    doc.setFillColor(230);
+    doc.roundedRect(marginLeft, afterTableY, boxWidth, 35, 4, 4, "F");
+    doc.setFontSize(12);
+    doc.setFont(undefined, "bold");
+    doc.text(
+      `Totale stimato: ${Math.round(totalMin)} € – ${Math.round(totalMax)} €`,
+      marginLeft + 10,
+      afterTableY + 22
+    ); 
+
+    const filename = `${propertyName || "immobile"}_${agencyName || "agenzia"}`.replace(/\s+/g, "_").toLowerCase() + ".pdf";
+    doc.save(filename);
+  };
 
   return (
     <div className="p-4 sm:p-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4 text-center sm:text-left">Stima dei Costi di Ristrutturazione</h1>
+      <div className="flex justify-end mb-4">
+        <Button variant="outline" onClick={() => setSelectedItems([])}>
+          Deseleziona tutto
+        </Button>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <div>
           <Label htmlFor="property">Nome immobile</Label>
@@ -120,11 +178,11 @@ export default function CostEstimator() {
         </div>
         <div>
           <Label htmlFor="area">Metratura immobile (mq)</Label>
-          <Input id="area" type="text" inputMode="numeric" pattern="[0-9]*" value={area} onChange={(e) => setArea(e.target.value)} />
+          <Input id="area" type="number" value={area} onChange={(e) => setArea(e.target.value)} />
         </div>
         <div>
           <Label htmlFor="amianto">Metratura tetto in amianto (mq)</Label>
-          <Input id="amianto" type="text" inputMode="numeric" pattern="[0-9]*" value={amiantoArea} onChange={(e) => setAmiantoArea(e.target.value)} />
+          <Input id="amianto" type="number" value={amiantoArea} onChange={(e) => setAmiantoArea(e.target.value)} />
         </div>
         <div>
           <Label htmlFor="bagni">Numero di bagni</Label>
@@ -133,44 +191,35 @@ export default function CostEstimator() {
       </div>
 
       <p className="mb-4 text-center sm:text-left">Seleziona gli interventi necessari per stimare un intervallo di spesa totale.</p>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        {costItems.filter(item => item.id !== "amianto").map((item) => (
-          <Card key={item.id} onClick={() => toggleItem(item.id)} className={`cursor-pointer transition-all duration-200 ${selectedItems.includes(item.id) ? "bg-blue-100 border-blue-500" : "hover:bg-gray-100"}`}>
+        {costItems.filter(item => item.id !== "amianto").map(item => (
+          <Card
+            key={item.id}
+            onClick={() => toggleItem(item.id)}
+            className={`cursor-pointer transition-all duration-200 ${selectedItems.includes(item.id) ? "bg-blue-100 border-blue-500" : "hover:bg-gray-100"}`}
+          >
             <CardContent className="p-4">
               <Label className="font-medium text-base">{item.label}</Label>
               <p className="text-sm text-muted-foreground">
                 {item.type === "fixed"
                   ? `${item.min.toLocaleString()} € – ${item.max.toLocaleString()} €`
                   : item.type === "bagni"
-                  ? `${item.min.toLocaleString()} € – ${item.max.toLocaleString()} € per bagno`
-                  : `${item.min} € – ${item.max} € al mq`}
+                    ? `${item.min.toLocaleString()} € – ${item.max.toLocaleString()} € per bagno`
+                    : `${item.min} € – ${item.max} € al mq`}
               </p>
             </CardContent>
           </Card>
         ))}
       </div>
 
+      <h1 className="text-2xl font-bold mb-4 text-center sm:text-left">Stima dei Costi di Ristrutturazione</h1>
+      <div className="text-center text-lg font-semibold mb-4">
+        Totale stimato: {totalMin.toLocaleString()} € – {totalMax.toLocaleString()} €
+      </div>
+
       <div className="flex justify-center">
-        <PDFDownloadLink
-          document={
-            <PDFDocument
-              propertyName={propertyName}
-              agencyName={agencyName}
-              area={area}
-              amiantoArea={amiantoArea}
-              numBagni={numBagni}
-              today={today}
-              costDetails={costDetails}
-              totalMin={totalMin}
-              totalMax={totalMax}
-            />
-          }
-          fileName="stima_ristrutturazione.pdf"
-        >
-          {({ loading }) => (
-            <Button>{loading ? "Generazione PDF..." : "Scarica PDF (alta qualità)"}</Button>
-          )}
-        </PDFDownloadLink>
+        <Button onClick={handleDownloadPDF}>Scarica PDF</Button>
       </div>
     </div>
   );
