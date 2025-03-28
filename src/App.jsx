@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import html2pdf from "html2pdf.js";
 
 const costItems = [
   { id: "umidita", label: "Umidità di risalita", type: "area", min: 10, max: 20 },
@@ -28,6 +29,7 @@ export default function CostEstimator() {
   const [area, setArea] = useState(0);
   const [amiantoArea, setAmiantoArea] = useState(0);
   const [numBagni, setNumBagni] = useState(1);
+  const resultRef = useRef(null);
 
   const toggleItem = (id) => {
     setSelectedItems((prev) =>
@@ -50,6 +52,15 @@ export default function CostEstimator() {
     if (item.type === "bagni") return sum + item.max * numBagni;
     return sum + item.max;
   }, 0);
+
+  const handleDownloadPDF = () => {
+    if (resultRef.current) {
+      html2pdf()
+        .set({ margin: 1, filename: "stima_ristrutturazione.pdf", html2canvas: { scale: 2 } })
+        .from(resultRef.current)
+        .save();
+    }
+  };
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
@@ -106,12 +117,13 @@ export default function CostEstimator() {
           </Card>
         ))}
       </div>
-      <div className="p-4 border rounded-xl bg-gray-50">
+      <div ref={resultRef} className="p-4 border rounded-xl bg-gray-50 mb-4">
         <h2 className="text-lg font-semibold mb-2">Totale stimato:</h2>
         <p className="text-xl font-bold">
           {totalMin.toLocaleString()} € – {totalMax.toLocaleString()} €
         </p>
       </div>
+      <Button onClick={handleDownloadPDF}>Salva come PDF</Button>
     </div>
   );
 }
