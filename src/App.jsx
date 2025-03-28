@@ -6,21 +6,21 @@ import { Button } from "@/components/ui/button";
 import html2pdf from "html2pdf.js";
 
 const costItems = [
-  { id: "umidita", label: "Umidità di risalita", type: "area", min: 10, max: 20 },
-  { id: "crepe", label: "Crepe strutturali", type: "area", min: 5, max: 15 },
-  { id: "tetto", label: "Tetto da rifare", type: "area", min: 30, max: 80 },
-  { id: "amianto", label: "Rimozione amianto (tetto)", type: "amianto", min: 8, max: 25 },
-  { id: "elettrico", label: "Impianto elettrico", type: "area", min: 10, max: 20 },
-  { id: "idraulico", label: "Impianto idraulico", type: "area", min: 10, max: 25 },
-  { id: "riscaldamento", label: "Riscaldamento completo", type: "area", min: 15, max: 40 },
-  { id: "fognatura", label: "Scarichi/fognatura", type: "area", min: 8, max: 20 },
-  { id: "facciata", label: "Cappotto o facciata", type: "area", min: 25, max: 60 },
-  { id: "infissi", label: "Infissi e serramenti", type: "area", min: 30, max: 60 },
-  { id: "pavimenti", label: "Pavimenti e rivestimenti", type: "area", min: 20, max: 50 },
-  { id: "giardino", label: "Sistemazione esterna", type: "area", min: 8, max: 25 },
+  { id: "umidita", label: "Umidità di risalita", type: "area", min: 7, max: 12 },
+  { id: "crepe", label: "Crepe strutturali", type: "area", min: 4, max: 8 },
+  { id: "tetto", label: "Tetto da rifare", type: "area", min: 20, max: 40 },
+  { id: "amianto", label: "Rimozione amianto (tetto)", type: "amianto", min: 8, max: 18 },
+  { id: "elettrico", label: "Impianto elettrico", type: "area", min: 7, max: 12 },
+  { id: "idraulico", label: "Impianto idraulico", type: "area", min: 7, max: 15 },
+  { id: "fognatura", label: "Scarichi/fognatura", type: "area", min: 5, max: 10 },
+  { id: "facciata", label: "Cappotto o facciata", type: "area", min: 20, max: 40 },
+  { id: "infissi", label: "Infissi e serramenti", type: "area", min: 25, max: 40 },
+  { id: "pavimenti", label: "Pavimenti e rivestimenti", type: "area", min: 15, max: 30 },
+  { id: "giardino", label: "Sistemazione esterna", type: "area", min: 5, max: 10 },
+  { id: "esterno_auto", label: "Pavimentazione esterna per auto", type: "fixed", min: 800, max: 1500 },
   { id: "permessi", label: "Permessi e pratiche", type: "fixed", min: 500, max: 1500 },
   { id: "sanatorie", label: "Sanatorie/accatastamenti", type: "fixed", min: 300, max: 2000 },
-  { id: "bagni", label: "Bagni completi da rifare", type: "bagni", min: 1500, max: 3000 },
+  { id: "bagni", label: "Bagni completi da rifare", type: "bagni", min: 1200, max: 2000 },
 ];
 
 export default function CostEstimator() {
@@ -69,6 +69,7 @@ export default function CostEstimator() {
   const costDetails = computeCostDetails();
   const totalMin = costDetails.reduce((sum, item) => sum + item.min, 0);
   const totalMax = costDetails.reduce((sum, item) => sum + item.max, 0);
+  const today = new Date().toLocaleDateString();
 
   const handleDownloadPDF = () => {
     if (resultRef.current) {
@@ -80,11 +81,11 @@ export default function CostEstimator() {
   };
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Stima dei Costi di Ristrutturazione</h1>
+    <div className="p-4 sm:p-6 max-w-2xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4 text-center sm:text-left">Stima dei Costi di Ristrutturazione</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <div>
-          <Label htmlFor="property">Posizione immobile</Label>
+          <Label htmlFor="property">Nome immobile</Label>
           <Input id="property" value={propertyName} onChange={(e) => setPropertyName(e.target.value)} />
         </div>
         <div>
@@ -123,7 +124,7 @@ export default function CostEstimator() {
           />
         </div>
       </div>
-      <p className="mb-4">Seleziona gli interventi necessari per stimare un intervallo di spesa totale.</p>
+      <p className="mb-4 text-center sm:text-left">Seleziona gli interventi necessari per stimare un intervallo di spesa totale.</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         {costItems.filter(item => item.id !== "amianto").map((item) => (
           <Card
@@ -147,6 +148,7 @@ export default function CostEstimator() {
         ))}
       </div>
       <div ref={resultRef} className="p-4 border rounded-xl bg-gray-50 mb-4">
+        <p className="text-sm mb-2 text-right">Data: {today}</p>
         <h2 className="text-lg font-semibold mb-2">Stima per: {propertyName || "(immobile non specificato)"}</h2>
         <p className="text-sm mb-2">Agenzia: {agencyName || "(agenzia non specificata)"}</p>
         <p className="text-sm mb-2">Metratura immobile: {area || 0} mq</p>
