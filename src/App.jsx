@@ -25,8 +25,8 @@ const costItems = [
 
 export default function CostEstimator() {
   const [selectedItems, setSelectedItems] = useState([]);
-  const [area, setArea] = useState(0);
-  const [amiantoArea, setAmiantoArea] = useState(0);
+  const [area, setArea] = useState("");
+  const [amiantoArea, setAmiantoArea] = useState("");
   const [numBagni, setNumBagni] = useState(1);
   const resultRef = useRef(null);
 
@@ -39,18 +39,18 @@ export default function CostEstimator() {
   const computeCostDetails = () => {
     let details = [];
     const visibleItems = costItems.filter(
-      (item) => selectedItems.includes(item.id) || (item.id === "amianto" && amiantoArea > 0)
+      (item) => selectedItems.includes(item.id) || (item.id === "amianto" && parseFloat(amiantoArea) > 0)
     );
 
     visibleItems.forEach((item) => {
       let min = 0;
       let max = 0;
       if (item.type === "area") {
-        min = item.min * area;
-        max = item.max * area;
+        min = item.min * parseFloat(area || 0);
+        max = item.max * parseFloat(area || 0);
       } else if (item.type === "amianto") {
-        min = item.min * amiantoArea;
-        max = item.max * amiantoArea;
+        min = item.min * parseFloat(amiantoArea || 0);
+        max = item.max * parseFloat(amiantoArea || 0);
       } else if (item.type === "bagni") {
         min = item.min * numBagni;
         max = item.max * numBagni;
@@ -85,18 +85,22 @@ export default function CostEstimator() {
           <Label htmlFor="area">Metratura immobile (mq)</Label>
           <Input
             id="area"
-            type="number"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={area}
-            onChange={(e) => setArea(Number(e.target.value))}
+            onChange={(e) => setArea(e.target.value)}
           />
         </div>
         <div>
           <Label htmlFor="amianto">Metratura tetto in amianto (mq)</Label>
           <Input
             id="amianto"
-            type="number"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={amiantoArea}
-            onChange={(e) => setAmiantoArea(Number(e.target.value))}
+            onChange={(e) => setAmiantoArea(e.target.value)}
           />
         </div>
         <div>
