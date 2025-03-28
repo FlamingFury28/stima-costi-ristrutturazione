@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import html2pdf from "html2pdf.js";
+import { PDFDownloadLink, Page, Text, View, Document, StyleSheet } from "@react-pdf/renderer";
 
 const costItems = [
   { id: "umidita", label: "Umidità di risalita", type: "area", min: 7, max: 12 },
@@ -23,6 +23,42 @@ const costItems = [
   { id: "bagni", label: "Bagni completi da rifare", type: "bagni", min: 1200, max: 2000 },
 ];
 
+const styles = StyleSheet.create({
+  page: { padding: 30, fontSize: 12, fontFamily: 'Helvetica' },
+  section: { marginBottom: 10 },
+  title: { fontSize: 18, marginBottom: 10 },
+  text: { marginBottom: 4 },
+  bold: { fontWeight: 'bold' }
+});
+
+const PDFDocument = ({ propertyName, agencyName, area, amiantoArea, numBagni, today, costDetails, totalMin, totalMax }) => (
+  <Document>
+    <Page size="A4" style={styles.page}>
+      <View style={styles.section}>
+        <Text style={styles.title}>Stima dei Costi di Ristrutturazione</Text>
+        <Text style={styles.text}>Data: {today}</Text>
+        <Text style={styles.text}>Immobile: {propertyName || "(non specificato)"}</Text>
+        <Text style={styles.text}>Agenzia: {agencyName || "(non specificata)"}</Text>
+        <Text style={styles.text}>Metratura immobile: {area || 0} mq</Text>
+        <Text style={styles.text}>Tetto in amianto: {amiantoArea || 0} mq</Text>
+        <Text style={styles.text}>Numero di bagni: {numBagni}</Text>
+      </View>
+      <View style={styles.section}>
+        <Text style={styles.bold}>Dettaglio costi stimati:</Text>
+        {costDetails.map((item, index) => (
+          <Text key={index} style={styles.text}>
+            • {item.label}: {item.min.toLocaleString()} € – {item.max.toLocaleString()} €
+          </Text>
+        ))}
+      </View>
+      <View style={styles.section}>
+        <Text style={styles.bold}>Totale stimato:</Text>
+        <Text style={styles.text}>{totalMin.toLocaleString()} € – {totalMax.toLocaleString()} €</Text>
+      </View>
+    </Page>
+  </Document>
+);
+
 export default function CostEstimator() {
   const [selectedItems, setSelectedItems] = useState([]);
   const [area, setArea] = useState("");
@@ -30,7 +66,6 @@ export default function CostEstimator() {
   const [numBagni, setNumBagni] = useState(1);
   const [propertyName, setPropertyName] = useState("");
   const [agencyName, setAgencyName] = useState("");
-  const resultRef = useRef(null);
 
   const toggleItem = (id) => {
     setSelectedItems((prev) =>
@@ -71,15 +106,6 @@ export default function CostEstimator() {
   const totalMax = costDetails.reduce((sum, item) => sum + item.max, 0);
   const today = new Date().toLocaleDateString();
 
-  const handleDownloadPDF = () => {
-    if (resultRef.current) {
-      html2pdf()
-        .set({ margin: 1, filename: "stima_ristrutturazione.pdf", html2canvas: { scale: 3, useCORS: true } })
-        .from(resultRef.current)
-        .save();
-    }
-  };
-
   return (
     <div className="p-4 sm:p-6 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-4 text-center sm:text-left">Stima dei Costi di Ristrutturazione</h1>
@@ -94,85 +120,58 @@ export default function CostEstimator() {
         </div>
         <div>
           <Label htmlFor="area">Metratura immobile (mq)</Label>
-          <Input
-            id="area"
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            value={area}
-            onChange={(e) => setArea(e.target.value)}
-          />
+          <Input id="area" type="text" inputMode="numeric" pattern="[0-9]*" value={area} onChange={(e) => setArea(e.target.value)} />
         </div>
         <div>
           <Label htmlFor="amianto">Metratura tetto in amianto (mq)</Label>
-          <Input
-            id="amianto"
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            value={amiantoArea}
-            onChange={(e) => setAmiantoArea(e.target.value)}
-          />
+          <Input id="amianto" type="text" inputMode="numeric" pattern="[0-9]*" value={amiantoArea} onChange={(e) => setAmiantoArea(e.target.value)} />
         </div>
         <div>
           <Label htmlFor="bagni">Numero di bagni</Label>
-          <Input
-            id="bagni"
-            type="number"
-            value={numBagni}
-            onChange={(e) => setNumBagni(Number(e.target.value))}
-          />
+          <Input id="bagni" type="number" value={numBagni} onChange={(e) => setNumBagni(Number(e.target.value))} />
         </div>
       </div>
+
       <p className="mb-4 text-center sm:text-left">Seleziona gli interventi necessari per stimare un intervallo di spesa totale.</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         {costItems.filter(item => item.id !== "amianto").map((item) => (
-          <Card
-            key={item.id}
-            onClick={() => toggleItem(item.id)}
-            className={`cursor-pointer transition-all duration-200 ${selectedItems.includes(item.id)
-              ? "bg-blue-100 border-blue-500"
-              : "hover:bg-gray-100"
-              }`}
-          >
+          <Card key={item.id} onClick={() => toggleItem(item.id)} className={`cursor-pointer transition-all duration-200 ${selectedItems.includes(item.id) ? "bg-blue-100 border-blue-500" : "hover:bg-gray-100"}`}>
             <CardContent className="p-4">
               <Label className="font-medium text-base">{item.label}</Label>
               <p className="text-sm text-muted-foreground">
                 {item.type === "fixed"
                   ? `${item.min.toLocaleString()} € – ${item.max.toLocaleString()} €`
                   : item.type === "bagni"
-                    ? `${item.min.toLocaleString()} € – ${item.max.toLocaleString()} € per bagno`
-                    : `${item.min} € – ${item.max} € al mq`}
+                  ? `${item.min.toLocaleString()} € – ${item.max.toLocaleString()} € per bagno`
+                  : `${item.min} € – ${item.max} € al mq`}
               </p>
             </CardContent>
           </Card>
         ))}
       </div>
-      <div
-        ref={resultRef}
-        className="p-4 border rounded-xl bg-gray-50 mb-4"
-        style={{ width: "800px", fontSize: "14px", fontFamily: "Arial, sans-serif" }}
-      >
-        <p className="text-sm mb-2 text-right">Data: {today}</p>
-        <h2 className="text-lg font-semibold mb-2">Stima per: {propertyName || "(immobile non specificato)"}</h2>
-        <p className="text-sm mb-2">Agenzia: {agencyName || "(agenzia non specificata)"}</p>
-        <p className="text-sm mb-2">Metratura immobile: {area || 0} mq</p>
-        <p className="text-sm mb-2">Metratura tetto in amianto: {amiantoArea || 0} mq</p>
-        <p className="text-sm mb-4">Numero di bagni: {numBagni}</p>
-        <h2 className="text-lg font-semibold mb-2">Dettaglio costi stimati:</h2>
-        <ul className="mb-2">
-          {costDetails.map((item, index) => (
-            <li key={index} className="text-sm">
-              {item.label}: <strong>{item.min.toLocaleString()} € – {item.max.toLocaleString()} €</strong>
-            </li>
-          ))}
-        </ul>
-        <h2 className="text-lg font-semibold mb-1">Totale stimato:</h2>
-        <p className="text-xl font-bold">
-          {totalMin.toLocaleString()} € – {totalMax.toLocaleString()} €
-        </p>
+
+      <div className="flex justify-center">
+        <PDFDownloadLink
+          document={
+            <PDFDocument
+              propertyName={propertyName}
+              agencyName={agencyName}
+              area={area}
+              amiantoArea={amiantoArea}
+              numBagni={numBagni}
+              today={today}
+              costDetails={costDetails}
+              totalMin={totalMin}
+              totalMax={totalMax}
+            />
+          }
+          fileName="stima_ristrutturazione.pdf"
+        >
+          {({ loading }) => (
+            <Button>{loading ? "Generazione PDF..." : "Scarica PDF (alta qualità)"}</Button>
+          )}
+        </PDFDownloadLink>
       </div>
-      <Button onClick={handleDownloadPDF}>Salva come PDF</Button>
     </div>
   );
 }
