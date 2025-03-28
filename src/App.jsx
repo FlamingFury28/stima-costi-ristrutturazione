@@ -7,21 +7,19 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 const costItems = [
-  { id: "umidita", label: "Umidità di risalita", type: "area", min: 7, max: 12 },
-  { id: "crepe", label: "Crepe strutturali", type: "area", min: 4, max: 8 },
-  { id: "tetto", label: "Tetto da rifare", type: "area", min: 20, max: 40 },
-  { id: "amianto", label: "Rimozione amianto (tetto)", type: "amianto", min: 8, max: 18 },
-  { id: "elettrico", label: "Impianto elettrico", type: "area", min: 7, max: 12 },
-  { id: "idraulico", label: "Impianto idraulico", type: "area", min: 7, max: 15 },
-  { id: "fognatura", label: "Scarichi/fognatura", type: "area", min: 5, max: 10 },
-  { id: "facciata", label: "Cappotto o facciata", type: "area", min: 20, max: 40 },
-  { id: "infissi", label: "Infissi e serramenti", type: "area", min: 25, max: 40 },
-  { id: "pavimenti", label: "Pavimenti e rivestimenti", type: "area", min: 15, max: 30 },
-  { id: "giardino", label: "Sistemazione esterna", type: "area", min: 5, max: 10 },
-  { id: "esterno_auto", label: "Pavimentazione esterna per auto", type: "fixed", min: 800, max: 1500 },
+  { id: "umidita", label: "Umidità di risalita", type: "area", min: 3, max: 6 },
+  { id: "crepe", label: "Crepe strutturali", type: "area", min: 2, max: 4 },
+  { id: "tetto", label: "Tetto da rifare", type: "area", min: 10, max: 20 },
+  { id: "amianto", label: "Rimozione amianto (tetto)", type: "amianto", min: 4, max: 8 },
+  { id: "elettrico", label: "Impianto elettrico", type: "area", min: 3, max: 6 },
+  { id: "idraulico_completo", label: "Impianto idraulico completo", type: "bagni", min: 1500, max: 2500 },
+  { id: "facciata", label: "Cappotto o facciata", type: "area", min: 10, max: 20 },
+  { id: "infissi", label: "Infissi e serramenti", type: "area", min: 12, max: 20 },
+  { id: "pavimenti", label: "Pavimenti e rivestimenti", type: "area", min: 8, max: 15 },
+  { id: "giardino", label: "Sistemazione esterna", type: "area", min: 2, max: 5 },
+  { id: "esterno_auto", label: "Pavimentazione esterna per auto", type: "fixed", min: 400, max: 800 },
   { id: "permessi", label: "Permessi e pratiche", type: "fixed", min: 500, max: 1500 },
-  { id: "sanatorie", label: "Sanatorie/accatastamenti", type: "fixed", min: 300, max: 2000 },
-  { id: "bagni", label: "Bagni completi da rifare", type: "bagni", min: 1200, max: 2000 },
+  { id: "sanatorie", label: "Sanatorie/accatastamenti", type: "fixed", min: 300, max: 2000 }
 ];
 
 export default function CostEstimator() {
