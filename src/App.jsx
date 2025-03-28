@@ -130,18 +130,19 @@ export default function CostEstimator() {
           <Card
             key={item.id}
             onClick={() => toggleItem(item.id)}
-            className={`cursor-pointer transition-all duration-200 ${
-              selectedItems.includes(item.id)
+            className={`cursor-pointer transition-all duration-200 ${selectedItems.includes(item.id)
                 ? "bg-blue-100 border-blue-500"
                 : "hover:bg-gray-100"
-            }`}
+              }`}
           >
             <CardContent className="p-4">
               <Label className="font-medium text-base">{item.label}</Label>
               <p className="text-sm text-muted-foreground">
                 {item.type === "fixed"
                   ? `${item.min.toLocaleString()} € – ${item.max.toLocaleString()} €`
-                  : `${item.min} € – ${item.max} € al mq`}
+                  : item.type === "bagni"
+                    ? `${item.min.toLocaleString()} € – ${item.max.toLocaleString()} € per bagno`
+                    : `${item.min} € – ${item.max} € al mq`}
               </p>
             </CardContent>
           </Card>
