@@ -84,7 +84,7 @@ export default function CostEstimator() {
       <h1 className="text-2xl font-bold mb-4">Stima dei Costi di Ristrutturazione</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <div>
-          <Label htmlFor="property">Nome immobile</Label>
+          <Label htmlFor="property">Posizione immobile</Label>
           <Input id="property" value={propertyName} onChange={(e) => setPropertyName(e.target.value)} />
         </div>
         <div>
