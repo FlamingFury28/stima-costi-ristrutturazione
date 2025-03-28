@@ -74,7 +74,7 @@ export default function CostEstimator() {
   const handleDownloadPDF = () => {
     if (resultRef.current) {
       html2pdf()
-        .set({ margin: 1, filename: "stima_ristrutturazione.pdf", html2canvas: { scale: 2 } })
+        .set({ margin: 1, filename: "stima_ristrutturazione.pdf", html2canvas: { scale: 3, useCORS: true } })
         .from(resultRef.current)
         .save();
     }
@@ -131,8 +131,8 @@ export default function CostEstimator() {
             key={item.id}
             onClick={() => toggleItem(item.id)}
             className={`cursor-pointer transition-all duration-200 ${selectedItems.includes(item.id)
-                ? "bg-blue-100 border-blue-500"
-                : "hover:bg-gray-100"
+              ? "bg-blue-100 border-blue-500"
+              : "hover:bg-gray-100"
               }`}
           >
             <CardContent className="p-4">
@@ -148,7 +148,11 @@ export default function CostEstimator() {
           </Card>
         ))}
       </div>
-      <div ref={resultRef} className="p-4 border rounded-xl bg-gray-50 mb-4">
+      <div
+        ref={resultRef}
+        className="p-4 border rounded-xl bg-gray-50 mb-4"
+        style={{ width: "800px", fontSize: "14px", fontFamily: "Arial, sans-serif" }}
+      >
         <p className="text-sm mb-2 text-right">Data: {today}</p>
         <h2 className="text-lg font-semibold mb-2">Stima per: {propertyName || "(immobile non specificato)"}</h2>
         <p className="text-sm mb-2">Agenzia: {agencyName || "(agenzia non specificata)"}</p>
