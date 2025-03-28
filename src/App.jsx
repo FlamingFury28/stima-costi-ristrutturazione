@@ -18,7 +18,6 @@ const costItems = [
   { id: "infissi", label: "Infissi e serramenti", type: "area", min: 30, max: 60 },
   { id: "pavimenti", label: "Pavimenti e rivestimenti", type: "area", min: 20, max: 50 },
   { id: "giardino", label: "Sistemazione esterna", type: "area", min: 8, max: 25 },
-  { id: "progetto", label: "Progetto e direzione lavori", type: "fixed", min: 0, max: 0 },
   { id: "permessi", label: "Permessi e pratiche", type: "fixed", min: 500, max: 1500 },
   { id: "sanatorie", label: "Sanatorie/accatastamenti", type: "fixed", min: 300, max: 2000 },
   { id: "bagni", label: "Bagni completi da rifare", type: "bagni", min: 1500, max: 3000 },
@@ -37,21 +36,37 @@ export default function CostEstimator() {
     );
   };
 
-  const totalMin = selectedItems.reduce((sum, id) => {
-    const item = costItems.find((item) => item.id === id);
-    if (item.type === "area") return sum + item.min * area;
-    if (item.type === "amianto" && amiantoArea > 0) return sum + item.min * amiantoArea;
-    if (item.type === "bagni") return sum + item.min * numBagni;
-    return sum + item.min;
-  }, 0);
+  const computeCostDetails = () => {
+    let details = [];
+    const visibleItems = costItems.filter(
+      (item) => selectedItems.includes(item.id) || (item.id === "amianto" && amiantoArea > 0)
+    );
 
-  const totalMax = selectedItems.reduce((sum, id) => {
-    const item = costItems.find((item) => item.id === id);
-    if (item.type === "area") return sum + item.max * area;
-    if (item.type === "amianto" && amiantoArea > 0) return sum + item.max * amiantoArea;
-    if (item.type === "bagni") return sum + item.max * numBagni;
-    return sum + item.max;
-  }, 0);
+    visibleItems.forEach((item) => {
+      let min = 0;
+      let max = 0;
+      if (item.type === "area") {
+        min = item.min * area;
+        max = item.max * area;
+      } else if (item.type === "amianto") {
+        min = item.min * amiantoArea;
+        max = item.max * amiantoArea;
+      } else if (item.type === "bagni") {
+        min = item.min * numBagni;
+        max = item.max * numBagni;
+      } else {
+        min = item.min;
+        max = item.max;
+      }
+      details.push({ label: item.label, min, max });
+    });
+
+    return details;
+  };
+
+  const costDetails = computeCostDetails();
+  const totalMin = costDetails.reduce((sum, item) => sum + item.min, 0);
+  const totalMax = costDetails.reduce((sum, item) => sum + item.max, 0);
 
   const handleDownloadPDF = () => {
     if (resultRef.current) {
@@ -96,7 +111,7 @@ export default function CostEstimator() {
       </div>
       <p className="mb-4">Seleziona gli interventi necessari per stimare un intervallo di spesa totale.</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        {costItems.map((item) => (
+        {costItems.filter(item => item.id !== "amianto").map((item) => (
           <Card
             key={item.id}
             onClick={() => toggleItem(item.id)}
@@ -118,7 +133,15 @@ export default function CostEstimator() {
         ))}
       </div>
       <div ref={resultRef} className="p-4 border rounded-xl bg-gray-50 mb-4">
-        <h2 className="text-lg font-semibold mb-2">Totale stimato:</h2>
+        <h2 className="text-lg font-semibold mb-2">Dettaglio costi stimati:</h2>
+        <ul className="mb-2">
+          {costDetails.map((item, index) => (
+            <li key={index} className="text-sm">
+              {item.label}: <strong>{item.min.toLocaleString()} € – {item.max.toLocaleString()} €</strong>
+            </li>
+          ))}
+        </ul>
+        <h2 className="text-lg font-semibold mb-1">Totale stimato:</h2>
         <p className="text-xl font-bold">
           {totalMin.toLocaleString()} € – {totalMax.toLocaleString()} €
         </p>
