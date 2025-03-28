@@ -28,6 +28,8 @@ export default function CostEstimator() {
   const [area, setArea] = useState("");
   const [amiantoArea, setAmiantoArea] = useState("");
   const [numBagni, setNumBagni] = useState(1);
+  const [propertyName, setPropertyName] = useState("");
+  const [agencyName, setAgencyName] = useState("");
   const resultRef = useRef(null);
 
   const toggleItem = (id) => {
@@ -81,6 +83,14 @@ export default function CostEstimator() {
     <div className="p-6 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Stima dei Costi di Ristrutturazione</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div>
+          <Label htmlFor="property">Nome immobile</Label>
+          <Input id="property" value={propertyName} onChange={(e) => setPropertyName(e.target.value)} />
+        </div>
+        <div>
+          <Label htmlFor="agency">Nome agenzia</Label>
+          <Input id="agency" value={agencyName} onChange={(e) => setAgencyName(e.target.value)} />
+        </div>
         <div>
           <Label htmlFor="area">Metratura immobile (mq)</Label>
           <Input
@@ -137,6 +147,11 @@ export default function CostEstimator() {
         ))}
       </div>
       <div ref={resultRef} className="p-4 border rounded-xl bg-gray-50 mb-4">
+        <h2 className="text-lg font-semibold mb-2">Stima per: {propertyName || "(immobile non specificato)"}</h2>
+        <p className="text-sm mb-2">Agenzia: {agencyName || "(agenzia non specificata)"}</p>
+        <p className="text-sm mb-2">Metratura immobile: {area || 0} mq</p>
+        <p className="text-sm mb-2">Metratura tetto in amianto: {amiantoArea || 0} mq</p>
+        <p className="text-sm mb-4">Numero di bagni: {numBagni}</p>
         <h2 className="text-lg font-semibold mb-2">Dettaglio costi stimati:</h2>
         <ul className="mb-2">
           {costDetails.map((item, index) => (
